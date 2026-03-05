@@ -2,18 +2,27 @@ import streamlit as st
 import joblib
 import numpy as np
 import pandas as pd
+from sklearn.linear_model import LinearRegression
+import os
 
-# Page Config
-st.set_page_config(page_title="Eye Health Predictor", page_icon="👁️", layout="wide")
+# --- NEW AUTO-TRAIN LOGIC ---
+def ensure_model_exists():
+    if not os.path.exists('eye_health_model.pkl'):
+        # If model is missing, train it on the fly using the CSV
+        df = pd.read_csv('eye_score.csv')
+        X = df.drop(columns=['Unnamed: 0', 'id', 'eye_health_score'])
+        y = df['eye_health_score']
+        model = LinearRegression().fit(X, y)
+        joblib.dump(model, 'eye_health_model.pkl')
 
-# Load the model
+ensure_model_exists()
+# ----------------------------
+
 @st.cache_resource
 def load_model():
-    # Ensure eye_health_model.pkl is in the same folder
     return joblib.load('eye_health_model.pkl')
 
-try:
-    model = load_model()
+model = load_model()
 except:
     st.error("Model file not found. Please ensure 'eye_health_model.pkl' is in the same directory.")
 
@@ -81,4 +90,5 @@ if st.button("Generate Health Report"):
         st.write("🌙 **Dim the Lights:** Match screen brightness to ambient light to reduce strain.")
     
     if input_df['screen_distance_cm'][0] < 45:
+
         st.write("📏 **Distance Check:** Sit an arm's length (50-70 cm) away from your screen.")
