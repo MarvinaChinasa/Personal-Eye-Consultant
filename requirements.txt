@@ -4,4 +4,5 @@ numpy
 pandas
 plotly
 scikit-learn
-st-gsheets-connection
+streamlit_gsheets_connection
+
