@@ -130,3 +130,36 @@ with adv_col2:
         st.error("**Low Natural Light:** Increasing outdoor exposure to at least 2 hours can improve your score by roughly 10 points.")
     else:
         st.success("**Natural Light King:** You're getting enough natural light to help regulate eye growth and circadian rhythms.")
+# --- DOWNLOAD REPORT SECTION ---
+st.markdown("---")
+st.subheader("📄 Save Your Results")
+
+# Create the report content
+report_text = f"""
+EYESCAN AI - PERSONAL VISION REPORT
+-----------------------------------
+Date: {pd.Timestamp.now().strftime('%Y-%m-%d')}
+Your Eye Health Score: {prediction:.2f}/100
+Global Average: {avg_score:.2f}/100
+Percentile: Top {100-percentile:.1f}%
+
+LIFESTYLE SUMMARY:
+- Age: {age}
+- Daily Screen Time: {screen_time} hours
+- Outdoor Exposure: {outdoor_time} hours
+- Screen Distance: {distance} cm
+
+AI RECOMMENDATIONS:
+1. Screen Habits: {"Great balance!" if screen_time < 8 else "Reduce screen fatigue using the 20-20-20 rule."}
+2. Light Exposure: {"Perfect outdoor time." if outdoor_time > 1.5 else "Try to get 1 more hour of natural light."}
+-----------------------------------
+Disclaimer: This is an AI prediction, not medical advice.
+"""
+
+# Add the download button
+st.download_button(
+    label="📥 Download My Eye Health Report",
+    data=report_text,
+    file_name=f"EyeScan_Report_{age}.txt",
+    mime="text/plain"
+)
