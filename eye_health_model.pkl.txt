@@ -1,0 +1,12 @@
+import pandas as pd
+import joblib
+from sklearn.linear_model import LinearRegression
+
+# Load your eye_score.csv data
+df = pd.read_csv('eye_score.csv')
+X = df.drop(columns=['Unnamed: 0', 'id', 'eye_health_score'])
+y = df['eye_health_score']
+
+# Train and Save
+model = LinearRegression().fit(X, y)
+joblib.dump(model, 'eye_health_model.pkl')
