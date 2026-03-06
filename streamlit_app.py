@@ -4,7 +4,7 @@ import numpy as np
 import plotly.express as px
 import plotly.graph_objects as go
 import joblib
-from streamlit_gsheets_connection import GSheetsConnection
+from st_gsheets_connection import GSheetsConnection
 
 # --- 1. PAGE CONFIG & STYLING ---
 st.set_page_config(page_title="EyeScan AI", page_icon="👁️", layout="wide")
@@ -125,3 +125,4 @@ if is_admin:
 # --- 7. DOWNLOAD REPORT ---
     report = f"EyeScan AI Report\nScore: {prediction:.1f}\nPercentile: {100-percentile:.1f}%"
     st.download_button("📥 Download Report", report, file_name="EyeReport.txt")
+
