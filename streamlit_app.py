@@ -8,18 +8,16 @@ from streamlit_gsheets import GSheetsConnection
 # --- 1. PAGE CONFIG & HIGH-CONTRAST STYLING ---
 st.set_page_config(page_title="Eye AI | Consultant", page_icon="👁️", layout="wide")
 
-# Custom CSS for high readability and professional aesthetics
 st.markdown("""
     <style>
     /* Main Background */
     .stApp { background-color: #f0f4f8; }
     
-    /* SIDEBAR NAVIGATION - HIGH CONTRAST ELECTRIC YELLOW */
+    /* SIDEBAR NAVIGATION - ELECTRIC YELLOW */
     section[data-testid="stSidebar"] { 
         background-color: #1e3a8a !important; 
     }
     
-    /* Force all text in sidebar to Electric Yellow */
     section[data-testid="stSidebar"] .st-bd, 
     section[data-testid="stSidebar"] label,
     section[data-testid="stSidebar"] p,
@@ -65,7 +63,7 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DATABASE CONNECTION (Global) ---
+# --- 2. DATABASE CONNECTION ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df_history = conn.read(ttl=0)
@@ -82,10 +80,10 @@ with st.sidebar:
     st.divider()
     st.caption("Public Eye Health Portal v2.1")
 
-# --- PAGE 1: WELCOME (PUBLIC) ---
+# --- PAGE 1: WELCOME ---
 if page == "🏠 Welcome":
     st.title("👁️ Personal Eye Consultant AI")
-    st.subheader("Your Vision, Analyzed by Intelligence")
+    st.subheader("Smart Analysis for the Digital Age")
     
     col1, col2, col3 = st.columns(3)
     with col1:
@@ -93,54 +91,54 @@ if page == "🏠 Welcome":
     with col2:
         st.markdown('<div class="metric-card"><b>⚡ Instant</b><br>Get your habit-based assessment in seconds.</div>', unsafe_allow_html=True)
     with col3:
-        st.markdown('<div class="metric-card"><b>🔒 Secure</b><br>Your personal inputs are not stored publicly.</div>', unsafe_allow_html=True)
+        st.markdown('<div class="metric-card"><b>🔒 Secure</b><br>Anonymous public use.</div>', unsafe_allow_html=True)
 
     st.markdown("---")
     st.markdown("### **Understanding the Science**")
-    st.write("This tool evaluates the balance between your digital strain and your eyes' recovery environment.")
+    st.write("Our AI looks at the relationship between your habits and your environment.")
     
     
+
+[Image of cross-section of the human eye showing anatomy]
+
 
     c1, c2 = st.columns(2)
     with c1:
-        st.info("**Digital Hygiene:** Factors like screen distance and brightness determine how hard your ciliary muscles are working.")
+        st.info("**Digital Hygiene:** Factors like screen distance and brightness determine eye muscle strain.")
     with c2:
-        st.success("**Recovery Environment:** Outdoor light exposure helps regulate eye growth and prevents fatigue.")
-    
-    st.write("Select **AI Consultation** from the sidebar to begin.")
+        st.success("**Recovery:** Outdoor light exposure helps maintain healthy eye regulation.")
 
-# --- PAGE 2: AI CONSULTATION (PUBLIC) ---
+# --- PAGE 2: AI CONSULTATION ---
 elif page == "🩺 AI Consultation":
-    st.title("🩺 AI-Powered Assessment")
-    st.write("Please enter your current habits and physical metrics below.")
-    
+    st.title("🩺 AI Assessment")
     model_path = 'eye_health_model.pkl'
+    
     model_ready = False
     if os.path.exists(model_path):
         try:
             model = joblib.load(model_path)
             model_ready = True
-        except: st.error("⚠️ Failed to load AI model.")
+        except: st.error("⚠️ AI model failed to load.")
     
     with st.form(key="eye_v2_form"):
-        st.markdown("#### **1. Personal Profile**")
+        st.markdown("#### **Personal Metrics**")
         col1, col2 = st.columns(2)
         with col1:
             age = st.number_input("Age", 0, 110, 25)
             height_cm = st.number_input("Height (cm)", 100, 220, 170)
             glasses = st.number_input("Glasses Power (Diopters)", -20.0, 20.0, 0.0)
         with col2:
-            exercise = st.number_input("Weekly Exercise (Hours)", 0, 40, 5)
-            mental = st.slider("Well-being Score (1-10)", 1, 10, 7)
+            exercise = st.number_input("Exercise (Hrs/Week)", 0, 40, 5)
+            mental = st.slider("Mental Well-being (1-10)", 1, 10, 7)
             
-        st.markdown("#### **2. Digital Habits**")
+        st.markdown("#### **Digital Habits**")
         col3, col4 = st.columns(2)
         with col3:
-            scr_time = st.number_input("Daily Screen Time (Hours)", 0, 24, 8)
+            scr_time = st.number_input("Daily Screen Time (Hrs)", 0, 24, 8)
             scr_dist = st.number_input("Screen Distance (cm)", 10, 100, 50)
-            bright = st.slider("Typical Screen Brightness (%)", 0, 100, 70)
+            bright = st.slider("Screen Brightness (%)", 0, 100, 70)
         with col4:
-            outdoor = st.number_input("Daily Outdoor Light (Hours)", 0, 24, 2)
+            outdoor = st.number_input("Outdoor Light (Hrs/Day)", 0, 24, 2)
             night = st.selectbox("Night Mode Usage", ["Always", "Sometimes", "Never"])
             nm_map = {"Always": 2, "Sometimes": 1, "Never": 0}
             nm_val = nm_map[night]
@@ -149,7 +147,6 @@ elif page == "🩺 AI Consultation":
 
     if submit and model_ready:
         try:
-            # Auto-align features
             features = {
                 'age': age, 'exercise_hours': exercise, 'glasses_number': glasses,
                 'height_cm': height_cm, 'mental_health_score': mental,
@@ -158,4 +155,26 @@ elif page == "🩺 AI Consultation":
                 'screen_time_hours': scr_time
             }
             input_df = pd.DataFrame([features])
-            if hasattr(model, "feature_names_in_
+            
+            # THE FIXED LINE: Properly closed string literal
+            if hasattr(model, "feature_names_in_"):
+                input_df = input_df[model.feature_names_in_]
+            
+            result = model.predict(input_df)[0]
+            
+            st.markdown(f'<div class="result-box"><h2>Result: {result}</h2></div>', unsafe_allow_html=True)
+            
+            report = f"VISION REPORT\nDate: {pd.Timestamp.now()}\nAssessment: {result}"
+            st.download_button("📥 Download Report", report, file_name="Eye_Report.txt")
+
+            if db_connected:
+                new_row = pd.DataFrame([{"Timestamp": pd.Timestamp.now(), "Age": age, "Result": result}])
+                conn.update(data=pd.concat([df_history, new_row], ignore_index=True))
+                
+        except Exception as e:
+            st.error(f"Analysis Error: {e}")
+
+# --- PAGE 3: ADMIN ---
+elif page == "🔒 Admin Records":
+    st.title("🔒 Admin Access")
+    if "admin_logged_
