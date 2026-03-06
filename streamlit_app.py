@@ -12,7 +12,6 @@ st.set_page_config(
     layout="wide"
 )
 
-# Custom CSS for a professional look
 st.markdown("""
     <style>
     .stButton>button { width: 100%; border-radius: 8px; height: 3em; background-color: #007BFF; color: white; font-weight: bold; }
@@ -23,7 +22,6 @@ st.markdown("""
 
 # --- 2. SECURITY CHECK ---
 def check_password():
-    """Returns True if the user had the correct password in Secrets."""
     if "ADMIN_PASSWORD" not in st.secrets:
         st.error("Configuration Error: 'ADMIN_PASSWORD' not found in Streamlit Secrets.")
         return False
@@ -43,17 +41,16 @@ def check_password():
 # --- 3. MAIN APP EXECUTION ---
 if check_password():
     
-    # --- DATABASE CONNECTION ---
+    # DATABASE CONNECTION
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
-        # We use ttl=0 to ensure we always get the freshest data from your sheet
         df_history = conn.read(ttl=0)
         db_connected = True
     except Exception as e:
         db_connected = False
         db_error = str(e)
 
-    # --- SIDEBAR NAVIGATION ---
+    # SIDEBAR
     with st.sidebar:
         st.image("https://cdn-icons-png.flaticon.com/512/2850/2850935.png", width=100)
         st.title("Main Menu")
@@ -63,7 +60,7 @@ if check_password():
             del st.session_state["password_correct"]
             st.rerun()
 
-    # --- PAGE 1: DASHBOARD ---
+    # PAGE 1: DASHBOARD
     if page == "Dashboard":
         st.title("👁️ Personal Eye Consultant AI")
         st.write("Welcome to the clinical decision support system.")
@@ -77,14 +74,9 @@ if check_password():
         with col3:
             st.metric("AI Model", "Ready")
 
-        st.subheader("Instructions")
-        st.info("""
-        1. Navigate to **AI Consultation** to input patient symptoms.
-        2. The AI will analyze the data against the `eye_health_model.pkl.txt` database.
-        3. Results are automatically logged to your connected Google Sheet.
-        """)
+        st.info("Navigate to **AI Consultation** to begin a patient assessment.")
 
-   # --- PAGE 2: AI CONSULTATION ---
+    # PAGE 2: AI CONSULTATION
     elif page == "AI Consultation":
         st.title("🩺 AI Symptom Assessment")
         
@@ -98,23 +90,28 @@ if check_password():
             except Exception as e:
                 st.error(f"⚠️ Model Load Error: {e}")
         
-        with st.form("consult_form"):
-            st.subheader("Patient Metrics")
-            col1, col2 = st.columns(2)
-            with col1:
-                age = st.number_input("Age", 0, 100, 25)
+        # ONE SINGLE FORM WITH A UNIQUE KEY
+        with st.form(key="final_eye_form"):
+            st.subheader("Patient Health Profile")
+            c1, c2 = st.columns(2)
+            
+            with c1:
+                age = st.number_input("Age", 0, 110, 30)
                 height = st.number_input("Height (cm)", 100, 220, 170)
-                glasses = st.number_input("Glasses Number (Diopters)", -20.0, 20.0, 0.0)
-            with col2:
+                glasses = st.number_input("Glasses Number", -20.0, 20.0, 0.0)
+            
+            with c2:
                 exercise = st.number_input("Weekly Exercise (Hours)", 0, 40, 5)
                 mental_health = st.slider("Mental Health Score (1-10)", 1, 10, 7)
+                symptom = st.selectbox("Current Symptom", ["Blurry Vision", "Redness", "Itching", "Pain", "Dryness"])
             
             submit = st.form_submit_button("🚀 Run AI Diagnosis")
 
             if submit:
                 if model_ready:
                     try:
-                        # 1. Create Dataframe with EXACT names seen at fit time (lowercase)
+                        # 1. MATCHING THE EXACT COLUMNS SEEN AT FIT TIME (LOWERCASE)
+                        # We use the 5 names identified in your previous error log
                         input_data = pd.DataFrame([[
                             age, 
                             exercise, 
@@ -129,100 +126,38 @@ if check_password():
                             'mental_health_score'
                         ])
                         
-                        # 2. Predict
-                        prediction = model.predict(input_data)
-                        result = prediction[0] # Now 'result' is defined!
-
-                        st.markdown("---")
-                        st.subheader("AI Recommendation")
-                        st.success(f"Assessment: **{result}**")
-
-                        # 3. SAVE TO GOOGLE SHEETS
-                        if db_connected:
-                            new_data = pd.DataFrame([{
-                                "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
-                                "Age": age,
-                                "Result": result
-                            }])
-                            updated_df = pd.concat([df_history, new_data], ignore_index=True)
-                            conn.update(data=updated_df)
-                            st.write("✅ Record synced to cloud.")
-                            
-                    except Exception as e:
-                        st.error(f"Prediction Error: {e}")
-                else:
-                    st.error("AI Model is not loaded correctly.")
-        with st.form("consult_form"):
-            c1, c2 = st.columns(2)
-            with c1:
-                age = st.number_input("Age", 0, 110, 30)
-                gender = st.selectbox("Gender", ["Male", "Female"])
-            with c2:
-                symptom = st.selectbox("Primary Symptom", ["Blurry Vision", "Redness", "Itching", "Pain", "Dryness"])
-                duration = st.slider("Duration (Days)", 1, 30, 2)
-            
-            submit = st.form_submit_button("🚀 Run AI Diagnosis")
-
-            if submit:
-                if model_ready:
-                    # 1. Convert text to numbers (Encoding)
-                    # This maps your symptoms to the numbers the model likely expects
-                    symptom_map = {"Blurry Vision": 0, "Dryness": 1, "Itching": 2, "Pain": 3, "Redness": 4}
-                    gender_map = {"Male": 0, "Female": 1}
-                    
-                    s_val = symptom_map.get(symptom, 0)
-                    g_val = gender_map.get(gender, 0)
-
-                    # 2. Create the EXACT dataframe the model expects
-                    # The order must be exactly how you trained the model
-                    # For example: [Age, Gender, Symptom, Duration]
-                    try:
-                        input_data = pd.DataFrame([[age, g_val, s_val, duration]], 
-                                                 columns=['Age', 'Gender', 'Symptom', 'Duration'])
-                        
+                        # 2. Prediction
                         prediction = model.predict(input_data)
                         result = prediction[0]
 
                         st.markdown("---")
                         st.subheader("AI Recommendation")
                         st.success(f"Assessment: **{result}**")
-                    except Exception as e:
-                        st.error(f"Feature Mismatch: {e}")
-                        st.info("Check the logs to see the exact column names the model is looking for.")
 
-                    # SAVE TO GOOGLE SHEETS
-                    if db_connected:
-                        try:
-                            # Creating a timestamped entry
-                            new_data = pd.DataFrame([{
+                        # 3. Save to Google Sheets
+                        if db_connected:
+                            new_row = pd.DataFrame([{
                                 "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
                                 "Age": age,
                                 "Symptom": symptom,
-                                "Duration": duration,
                                 "Result": result
                             }])
-                            # Append to the sheet
-                            updated_df = pd.concat([df_history, new_data], ignore_index=True)
+                            updated_df = pd.concat([df_history, new_row], ignore_index=True)
                             conn.update(data=updated_df)
-                            st.write("✅ Record synced to cloud database.")
-                        except Exception as e:
-                            st.error(f"Failed to save to sheet: {e}")
+                            st.write("✅ Record saved to database.")
+                            
+                    except Exception as e:
+                        st.error(f"Prediction Error: {e}")
                 else:
-                    st.error("AI Analysis unavailable. Please check model file.")
+                    st.error("Model not available.")
 
-    # --- PAGE 3: HISTORY LOG ---
+    # PAGE 3: HISTORY LOG
     elif page == "History Log":
         st.title("📊 Consultation History")
         if db_connected and not df_history.empty:
             st.dataframe(df_history, use_container_width=True)
-            
-            # Simple Chart
-            if "Symptom" in df_history.columns:
-                fig = px.histogram(df_history, x="Symptom", title="Trend of Reported Symptoms")
-                st.plotly_chart(fig, use_container_width=True)
+            if "Result" in df_history.columns:
+                fig = px.pie(df_history, names="Result", title="Diagnosis Distribution")
+                st.plotly_chart(fig)
         else:
-            st.info("No records found in the database.")
-
-
-
-
+            st.info("No records found.")
