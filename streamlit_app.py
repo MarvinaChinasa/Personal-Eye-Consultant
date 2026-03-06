@@ -12,10 +12,10 @@ st.markdown("""
     <style>
     .stApp { background-color: #f0f4f8; }
     
-    /* SIDEBAR - DIM WHITE TEXT FOR BETTER AESTHETICS */
+    /* SIDEBAR - DIM WHITE TEXT AESTHETIC */
     section[data-testid="stSidebar"] { background-color: #1e3a8a !important; }
     section[data-testid="stSidebar"] * {
-        color: #d1d5db !important; /* Dimmed light grey/white */
+        color: #d1d5db !important; /* Soft, dimmed light grey */
         font-size: 16px !important;
         font-weight: 500 !important;
     }
@@ -37,13 +37,7 @@ st.markdown("""
         border-left: 10px solid #3b82f6;
         box-shadow: 0 4px 6px rgba(0,0,0,0.1);
         margin-bottom: 20px;
-    }
-    
-    .recommendation-card {
-        background-color: #f9fafb;
-        padding: 15px;
-        border-radius: 10px;
-        border: 1px solid #e5e7eb;
+        color: #1e3a8a;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -67,17 +61,13 @@ if page == "🏠 Home":
     st.title("👁️ Personal Eye Consultant AI")
     st.write("Professional vision habit analysis powered by Machine Learning.")
     
-    
-
-[Image of the anatomy of the human eye showing retina, lens and cornea]
-
-    
     st.markdown("""
     ### System Capabilities
     - **Risk Mapping:** Analyzes 10 environmental and physical variables.
     - **Habit Analysis:** Evaluates digital vs. natural light exposure.
     - **Personalized Feedback:** Get tailored advice based on your specific AI result.
     """)
+    st.info("Select 'Consultation' from the sidebar to begin your assessment.")
 
 # --- PAGE 2: CONSULTATION ---
 elif page == "🩺 Consultation":
@@ -120,29 +110,22 @@ elif page == "🩺 Consultation":
             
             prediction = model.predict(input_df)[0]
             
-            # --- AI INTERPRETATION LOGIC ---
+            # --- AI INTERPRETATION & RECOMMENDATIONS ---
             st.markdown(f'<div class="result-box"><h3>AI Result: {prediction}</h3></div>', unsafe_allow_html=True)
             
             st.subheader("📋 Interpretation & Recommendations")
             
-            # Create a card for recommendations
-            with st.container():
-                if "Good" in str(prediction) or "Normal" in str(prediction):
-                    st.success("**What this means:** Your current lifestyle and physical metrics suggest a balanced eye environment.")
-                    st.markdown("""
-                    - **Recommendation 1:** Maintain the 20-20-20 rule during long screen sessions.
-                    - **Recommendation 2:** Continue getting at least 2 hours of natural light daily.
-                    """)
-                elif "Strain" in str(prediction) or "Risk" in str(prediction):
-                    st.warning("**What this means:** The AI has detected patterns commonly associated with digital eye fatigue or vision strain.")
-                    st.markdown("""
-                    - **Recommendation 1:** Increase your screen distance to at least 50cm.
-                    - **Recommendation 2:** Use 'Night Mode' consistently after sunset to reduce blue light.
-                    - **Recommendation 3:** **Schedule a professional eye exam** to verify these findings.
-                    """)
-                else:
-                    st.info("**What this means:** Based on your inputs, your profile shows unique characteristics.")
-                    st.markdown("- **Recommendation:** Monitor for any signs of blurred vision or headaches and consult an optometrist.")
+            # Logic to explain the result
+            pred_str = str(prediction).lower()
+            if "good" in pred_str or "normal" in pred_str or "healthy" in pred_str:
+                st.success("**What this means:** Your metrics suggest a balanced eye environment.")
+                st.markdown("- Maintain the **20-20-20 rule**: Every 20 minutes, look 20 feet away for 20 seconds.\n- Ensure you continue getting natural sunlight daily.")
+            elif "strain" in pred_str or "risk" in pred_str or "poor" in pred_str:
+                st.warning("**What this means:** AI detected patterns linked to digital eye fatigue or strain.")
+                st.markdown("- **Action:** Increase screen distance to at least 50cm.\n- **Action:** Enable 'Night Mode' to reduce blue light exposure.\n- **Note:** Please consult an optometrist for a clinical exam.")
+            else:
+                st.info("**What this means:** Your profile shows unique characteristics.")
+                st.markdown("- Review your daily screen habits and ensure adequate lighting in your workspace.")
 
             if db_connected:
                 new_row = pd.DataFrame([{"Timestamp": pd.Timestamp.now(), "Age": age, "Result": prediction}])
@@ -160,9 +143,10 @@ elif page == "🔒 Admin":
             if pwd == st.secrets["ADMIN_PASSWORD"]:
                 st.session_state.logged_in = True
                 st.rerun()
+            else: st.error("Access Denied.")
     else:
         st.button("Logout", on_click=lambda: st.session_state.update({"logged_in": False}))
         st.dataframe(df_history, use_container_width=True)
         if not df_history.empty:
-            fig = px.pie(df_history, names="Result", hole=0.4, title="Global Assessment Distribution")
+            fig = px.pie(df_history, names="Result", hole=0.4, title="Global Data Overview")
             st.plotly_chart(fig)
