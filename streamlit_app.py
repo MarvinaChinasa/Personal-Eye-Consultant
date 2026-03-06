@@ -62,7 +62,8 @@ except:
 with st.sidebar:
     st.markdown("### NAVIGATION")
     page = st.radio("", ["🏠 Home", "🩺 Consultation", "🔒 Admin"])
-    st.spacer(10)
+    # Fixed the spacer error by using empty space
+    st.write("") 
     st.divider()
     st.markdown("⚠️ **Disclaimer:** This AI is a decision-support tool for educational purposes only. It is not a clinical diagnosis. Always consult a qualified optometrist.")
 
@@ -76,7 +77,7 @@ if page == "🏠 Home":
     The model identifies correlations between your physical baseline and digital environment.
     - **Accommodation Stress:** How hard your lenses work based on screen distance.
     - **Circadian Impact:** How night-mode and brightness affect eye fatigue.
-    - **Developmental Factors:** The role of outdoor light in maintaining eye shape.
+    - **Developmental Factors:** The role of outdoor light in maintaining healthy eye regulation.
     """)
     st.info("Navigate to **Consultation** to begin.")
 
@@ -120,68 +121,45 @@ elif page == "🩺 Consultation":
             
             prediction = model.predict(input_df)[0]
             
-            # --- DETAILED AI INTERPRETATION ---
             st.markdown(f'<div class="result-box"><h2>AI Diagnosis: {prediction}</h2></div>', unsafe_allow_html=True)
             
             st.subheader("📋 Comprehensive Report")
-            
             res_val = str(prediction).lower()
             
             with st.container():
                 st.markdown('<div class="recommendation-section">', unsafe_allow_html=True)
                 
-                # 1. HEALTHY / NORMAL
                 if any(x in res_val for x in ["good", "normal", "healthy"]):
                     st.success("### ✅ Optimal Vision Balance")
                     st.write("Your metrics indicate that your lifestyle habits effectively compensate for digital strain.")
                     st.markdown("""
                     **Detailed Recommendations:**
                     - **Maintain Ergonomics:** Continue keeping screens at least 50cm away.
-                    - **Sunlight Intake:** Your outdoor light exposure is helping regulate your eye's dopamine levels, which prevents myopia.
-                    - **Preventative Care:** Follow the **20-20-20 rule** to ensure your ciliary muscles remain flexible.
+                    - **Sunlight Intake:** Your outdoor light exposure helps regulate eye development and prevents axial elongation.
+                    - **Preventative Care:** Follow the **20-20-20 rule** to maintain ciliary muscle flexibility.
                     """)
-
-                # 2. STRAIN / FATIGUE
                 elif any(x in res_val for x in ["strain", "fatigue", "des"]):
                     st.warning("### ⚠️ Digital Eye Strain (DES) Detected")
-                    st.write("The AI has flagged a high correlation between your screen time and insufficient recovery time.")
+                    st.write("The AI has flagged a high correlation between screen intensity and insufficient recovery time.")
                     st.markdown("""
                     **Detailed Recommendations:**
-                    - **Immediate Change:** Lower your screen brightness to match the room lighting.
-                    - **Night Mode:** Enable blue-light filters 2 hours before sleep to reduce retinal stress.
-                    - **Distance:** Your screen distance may be too close. Aim for an arm's length (approx. 60cm).
+                    - **Brightness Check:** Match screen brightness to ambient light to reduce pupillary stress.
+                    - **Blue Light:** Increase Night Mode usage to reduce high-energy visible (HEV) light impact.
+                    - **Blink Often:** High screen time reduces blink rate; consciously blink to keep the tear film stable.
                     """)
-
-                # 3. MYOPIA / NEARSIGHTEDNESS
                 elif "myopia" in res_val:
                     st.error("### 👓 Potential Myopic Progression")
-                    st.write("The model suggests your habits (low outdoor light + high close-up work) are patterns seen in myopic progression.")
+                    st.write("The model suggests patterns associated with nearsightedness development.")
                     st.markdown("""
                     **Detailed Recommendations:**
-                    - **Outdoor Time:** Aim for at least 90-120 minutes of outdoor daylight to slow axial eye growth.
-                    - **Focus Variety:** Spend time looking at distant objects (clouds, trees) to relax the lens.
-                    - **Professional Exam:** This result strongly suggests a need for a refraction test.
+                    - **Outdoor Time:** Aim for 2 hours of daylight exposure to stimulate retinal dopamine.
+                    - **Distance Work:** Take frequent breaks from "near-work" (reading/phones).
+                    - **Clinical Check:** A professional refraction test is highly recommended.
                     """)
-
-                # 4. HYPEROPIA / FAR
-                elif "hyperopia" in res_val:
-                    st.info("### 🔍 Hyperopic Patterns")
-                    st.write("Your profile matches patterns where the eye must work harder to focus on close objects.")
-                    st.markdown("""
-                    **Detailed Recommendations:**
-                    - **Workplace Lighting:** Ensure your task area is brightly and evenly lit.
-                    - **Font Size:** Increase text size on digital devices to reduce the strain of accommodation.
-                    """)
-
-                # 5. CATCH-ALL / UNIQUE
                 else:
                     st.info("### ℹ️ Diverse Habit Profile")
-                    st.write("Your inputs show a unique combination of factors that don't fit a singular category.")
-                    st.markdown("""
-                    **General Recommendations:**
-                    - Ensure your mental well-being and exercise remain high, as physical health impacts ocular blood flow.
-                    - Keep a diary of any headaches or blurred vision to share with your doctor.
-                    """)
+                    st.write("Your inputs show a unique combination of factors.")
+                    st.markdown("- **Recommendation:** Keep a log of any visual discomfort or headaches and share them with a specialist.")
                 
                 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -205,5 +183,5 @@ elif page == "🔒 Admin":
         st.button("Logout", on_click=lambda: st.session_state.update({"logged_in": False}))
         st.dataframe(df_history, use_container_width=True)
         if not df_history.empty:
-            fig = px.pie(df_history, names="Result", hole=0.4, title="Global Assessment Distribution")
+            fig = px.pie(df_history, names="Result", hole=0.4, title="Global Data Overview")
             st.plotly_chart(fig)
