@@ -96,8 +96,7 @@ if check_password():
 
             if submit and model_ready:
                 try:
-                    # THE ORDER OF FEATURES IS CRITICAL
-                    # We create a dictionary first to map the values to names
+                    # 1. Gather all inputs into a dictionary
                     features = {
                         'age': age,
                         'exercise_hours': exercise_hours,
@@ -111,12 +110,15 @@ if check_password():
                         'screen_time_hours': screen_time_hours
                     }
                     
-                    # Convert dictionary to DataFrame
+                    # 2. Create initial DataFrame
                     input_df = pd.DataFrame([features])
                     
-                    # FORCE ALPHABETICAL ORDER (Standard for many models unless specified otherwise)
-                    input_df = input_df.reindex(sorted(input_df.columns), axis=1)
+                    # 3. AUTO-ALIGNMENT: Force the DataFrame to match the model's training order
+                    if hasattr(model, "feature_names_in_"):
+                        # This tells the code to reorganize itself based on the model's internal memory
+                        input_df = input_df[model.feature_names_in_]
                     
+                    # 4. Predict
                     prediction = model.predict(input_df)
                     result = prediction[0]
 
@@ -131,7 +133,9 @@ if check_password():
                             
                 except Exception as e:
                     st.error(f"Prediction Error: {e}")
-                    st.info("If the order is still wrong, look for 'Expected: [list]' in the 'Manage App' logs.")
+                    # Debug helper: if it still fails, let's see what order the model wants
+                    if hasattr(model, "feature_names_in_"):
+                        st.info(f"The model expects this order: {list(model.feature_names_in_)}")
 
     # PAGE 3: HISTORY LOG
     elif page == "History Log":
