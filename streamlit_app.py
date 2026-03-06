@@ -84,24 +84,26 @@ if check_password():
         3. Results are automatically logged to your connected Google Sheet.
         """)
 
-    # --- PAGE 2: AI CONSULTATION ---
+   # --- PAGE 2: AI CONSULTATION ---
     elif page == "AI Consultation":
-        st.title("🩺 Symptom Assessment & Prediction")
+        st.title("🩺 AI Symptom Assessment")
         
-        # Load the specific model file
         model_path = 'eye_health_model.pkl.txt'
-        
+        model_ready = False
+
         if os.path.exists(model_path):
             try:
-                model = joblib.load(model_path)
+                # Open as a binary file to ensure the .txt extension doesn't confuse the loader
+                with open(model_path, 'rb') as f:
+                    model = joblib.load(f)
                 model_ready = True
-            except:
-                st.error("The model file is present but failed to load. Check format.")
-                model_ready = False
+            except Exception as e:
+                st.error(f"⚠️ Model Load Error: {e}")
+                st.info("Technical Tip: Ensure the file was created using 'joblib.dump' or 'pickle.dump'.")
         else:
-            st.warning(f"Model file '{model_path}' not found. Prediction is disabled.")
-            model_ready = False
+            st.warning(f"File '{model_path}' not found in the GitHub repository.")
 
+        # ... (rest of your form code remains the same)
         with st.form("consult_form"):
             c1, c2 = st.columns(2)
             with c1:
@@ -159,3 +161,4 @@ if check_password():
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No records found in the database.")
+
