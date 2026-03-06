@@ -88,22 +88,22 @@ if check_password():
     elif page == "AI Consultation":
         st.title("🩺 AI Symptom Assessment")
         
-        model_path = 'eye_health_model.pkl.txt'
+        # Point to the NEW file name you uploaded
+        model_path = 'eye_health_model.pkl'
         model_ready = False
 
         if os.path.exists(model_path):
             try:
-                # Open as a binary file to ensure the .txt extension doesn't confuse the loader
-                with open(model_path, 'rb') as f:
-                    model = joblib.load(f)
+                # Load the binary brain
+                model = joblib.load(model_path)
                 model_ready = True
             except Exception as e:
                 st.error(f"⚠️ Model Load Error: {e}")
-                st.info("Technical Tip: Ensure the file was created using 'joblib.dump' or 'pickle.dump'.")
+                st.info("The file was found, but there's a version mismatch or corruption.")
         else:
-            st.warning(f"File '{model_path}' not found in the GitHub repository.")
+            st.warning(f"File '{model_path}' not found on GitHub. Check the spelling!")
 
-        # ... (rest of your form code remains the same)
+        # ... (the rest of the form stays the same)
         with st.form("consult_form"):
             c1, c2 = st.columns(2)
             with c1:
@@ -161,4 +161,5 @@ if check_password():
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No records found in the database.")
+
 
