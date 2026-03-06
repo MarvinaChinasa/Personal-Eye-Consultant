@@ -1,8 +1,7 @@
 streamlit
-joblib
-numpy
 pandas
-plotly
+numpy
+joblib
 scikit-learn
-streamlit_gsheets_connection
-
+plotly
+st-gsheets-connection
