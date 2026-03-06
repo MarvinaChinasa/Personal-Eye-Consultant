@@ -62,7 +62,6 @@ except:
 with st.sidebar:
     st.markdown("### NAVIGATION")
     page = st.radio("", ["🏠 Home", "🩺 Consultation", "🔒 Admin"])
-    # Fixed the spacer error by using empty space
     st.write("") 
     st.divider()
     st.markdown("⚠️ **Disclaimer:** This AI is a decision-support tool for educational purposes only. It is not a clinical diagnosis. Always consult a qualified optometrist.")
@@ -121,8 +120,26 @@ elif page == "🩺 Consultation":
             
             prediction = model.predict(input_df)[0]
             
+            # --- RESULTS SECTION ---
             st.markdown(f'<div class="result-box"><h2>AI Diagnosis: {prediction}</h2></div>', unsafe_allow_html=True)
             
+            # THE DOWNLOAD BUTTON (RE-ADDED)
+            report_text = (
+                f"EYE CONSULTANT AI REPORT\n"
+                f"--------------------------\n"
+                f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}\n"
+                f"Age: {age}\n"
+                f"AI Result: {prediction}\n\n"
+                f"Note: This is an AI-generated suggestion based on habit patterns. "
+                f"It is not a clinical diagnosis."
+            )
+            st.download_button(
+                label="📥 Download My Results",
+                data=report_text,
+                file_name=f"Vision_Report_{pd.Timestamp.now().strftime('%Y%m%d')}.txt",
+                mime="text/plain"
+            )
+
             st.subheader("📋 Comprehensive Report")
             res_val = str(prediction).lower()
             
@@ -135,7 +152,7 @@ elif page == "🩺 Consultation":
                     st.markdown("""
                     **Detailed Recommendations:**
                     - **Maintain Ergonomics:** Continue keeping screens at least 50cm away.
-                    - **Sunlight Intake:** Your outdoor light exposure helps regulate eye development and prevents axial elongation.
+                    - **Sunlight Intake:** Your outdoor light exposure helps regulate eye development.
                     - **Preventative Care:** Follow the **20-20-20 rule** to maintain ciliary muscle flexibility.
                     """)
                 elif any(x in res_val for x in ["strain", "fatigue", "des"]):
@@ -144,8 +161,8 @@ elif page == "🩺 Consultation":
                     st.markdown("""
                     **Detailed Recommendations:**
                     - **Brightness Check:** Match screen brightness to ambient light to reduce pupillary stress.
-                    - **Blue Light:** Increase Night Mode usage to reduce high-energy visible (HEV) light impact.
-                    - **Blink Often:** High screen time reduces blink rate; consciously blink to keep the tear film stable.
+                    - **Blue Light:** Increase Night Mode usage to reduce HEV light impact.
+                    - **Blink Often:** Consciously blink to keep the tear film stable during screen use.
                     """)
                 elif "myopia" in res_val:
                     st.error("### 👓 Potential Myopic Progression")
@@ -159,7 +176,7 @@ elif page == "🩺 Consultation":
                 else:
                     st.info("### ℹ️ Diverse Habit Profile")
                     st.write("Your inputs show a unique combination of factors.")
-                    st.markdown("- **Recommendation:** Keep a log of any visual discomfort or headaches and share them with a specialist.")
+                    st.markdown("- **Recommendation:** Keep a log of any visual discomfort and share it with a specialist.")
                 
                 st.markdown('</div>', unsafe_allow_html=True)
 
@@ -179,8 +196,10 @@ elif page == "🔒 Admin":
             if pwd == st.secrets["ADMIN_PASSWORD"]:
                 st.session_state.logged_in = True
                 st.rerun()
+            else: st.error("Access Denied.")
     else:
         st.button("Logout", on_click=lambda: st.session_state.update({"logged_in": False}))
+        st.write("### Consultation History")
         st.dataframe(df_history, use_container_width=True)
         if not df_history.empty:
             fig = px.pie(df_history, names="Result", hole=0.4, title="Global Data Overview")
