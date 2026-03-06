@@ -22,7 +22,6 @@ st.markdown("""
 
 # --- 2. SECURITY CHECK ---
 def check_password():
-    """Returns True if the user had the correct password in Secrets."""
     if "ADMIN_PASSWORD" not in st.secrets:
         st.error("Configuration Error: 'ADMIN_PASSWORD' not found in Streamlit Secrets.")
         return False
@@ -42,7 +41,7 @@ def check_password():
 # --- 3. MAIN APP EXECUTION ---
 if check_password():
     
-    # --- DATABASE CONNECTION ---
+    # DATABASE CONNECTION
     try:
         conn = st.connection("gsheets", type=GSheetsConnection)
         df_history = conn.read(ttl=0)
@@ -51,7 +50,7 @@ if check_password():
         db_connected = False
         db_error = str(e)
 
-    # --- SIDEBAR NAVIGATION ---
+    # SIDEBAR
     with st.sidebar:
         st.image("https://cdn-icons-png.flaticon.com/512/2850/2850935.png", width=100)
         st.title("Main Menu")
@@ -61,7 +60,7 @@ if check_password():
             del st.session_state["password_correct"]
             st.rerun()
 
-    # --- PAGE 1: DASHBOARD ---
+    # PAGE 1: DASHBOARD
     if page == "Dashboard":
         st.title("👁️ Personal Eye Consultant AI")
         st.write("Welcome to the clinical decision support system.")
@@ -75,14 +74,9 @@ if check_password():
         with col3:
             st.metric("AI Model Status", "Ready")
 
-        st.subheader("Instructions")
-        st.info("""
-        1. Navigate to **AI Consultation** to input patient metrics.
-        2. Provide details including screen time, light exposure, and physical metrics.
-        3. The AI will provide a recommendation and sync it to your Google Sheet.
-        """)
+        st.info("Navigate to **AI Consultation** to begin a patient assessment.")
 
-    # --- PAGE 2: AI CONSULTATION ---
+    # PAGE 2: AI CONSULTATION
     elif page == "AI Consultation":
         st.title("🩺 AI Symptom Assessment")
         
@@ -116,4 +110,52 @@ if check_password():
                 screen_brightness_avg = st.slider("Average Screen Brightness (%)", 0, 100, 70)
             with c4:
                 outdoor_light_exposure_hours = st.number_input("Outdoor Light Exposure (Hours)", 0, 24, 2)
-                night_mode_usage = st.selectbox("Night Mode Usage", ["Always
+                # --- FIXED LINE BELOW ---
+                night_mode_usage = st.selectbox("Night Mode Usage", ["Always", "Sometimes", "Never"])
+                nm_map = {"Always": 2, "Sometimes": 1, "Never": 0}
+                nm_val = nm_map[night_mode_usage]
+            
+            submit = st.form_submit_button("🚀 Run AI Diagnosis")
+
+            if submit:
+                if model_ready:
+                    try:
+                        input_data = pd.DataFrame([[
+                            age, exercise_hours, glasses_number, height_cm, 
+                            mental_health_score, nm_val, outdoor_light_exposure_hours, 
+                            screen_brightness_avg, screen_distance_cm, screen_time_hours
+                        ]], columns=[
+                            'age', 'exercise_hours', 'glasses_number', 'height_cm', 
+                            'mental_health_score', 'night_mode_usage', 'outdoor_light_exposure_hours', 
+                            'screen_brightness_avg', 'screen_distance_cm', 'screen_time_hours'
+                        ])
+                        
+                        prediction = model.predict(input_data)
+                        result = prediction[0]
+
+                        st.markdown("---")
+                        st.subheader("AI Recommendation")
+                        st.success(f"Assessment: **{result}**")
+
+                        if db_connected:
+                            new_row = pd.DataFrame([{
+                                "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+                                "Age": age,
+                                "Recommendation": result
+                            }])
+                            updated_df = pd.concat([df_history, new_row], ignore_index=True)
+                            conn.update(data=updated_df)
+                            st.write("✅ Record synced to cloud database.")
+                            
+                    except Exception as e:
+                        st.error(f"Prediction Error: {e}")
+                else:
+                    st.error("AI Analysis unavailable.")
+
+    # PAGE 3: HISTORY LOG
+    elif page == "History Log":
+        st.title("📊 Consultation History")
+        if db_connected and not df_history.empty:
+            st.dataframe(df_history, use_container_width=True)
+        else:
+            st.info("No records found.")
