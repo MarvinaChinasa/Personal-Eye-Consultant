@@ -16,6 +16,12 @@ st.markdown("""
 # --- 2. PASSWORD PROTECTION ---
 def check_password():
     """Returns True if the user had the correct password."""
+    # Check if ADMIN_PASSWORD even exists in Secrets
+    if "ADMIN_PASSWORD" not in st.secrets:
+        st.error("Missing Secret: 'ADMIN_PASSWORD' not found in Streamlit Secrets.")
+        st.info("Please go to Settings -> Secrets and add: ADMIN_PASSWORD = 'yourpassword'")
+        return False
+
     if "password_correct" not in st.session_state:
         st.title("🔒 Security Portal")
         password = st.text_input("Please enter the Admin Password", type="password")
@@ -83,3 +89,4 @@ if check_password():
             st.plotly_chart(fig)
         else:
             st.info("No data available to display.")
+
