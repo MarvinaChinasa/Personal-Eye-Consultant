@@ -4,4 +4,4 @@ numpy
 joblib
 scikit-learn
 plotly
-st-gsheets-connection
+st-gsheets-connection==0.0.3.
