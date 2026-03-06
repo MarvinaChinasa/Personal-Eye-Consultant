@@ -1,33 +1,14 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import plotly.express as px
-import plotly.graph_objects as go
-import joblib
-import streamlit as st
-import streamlit as st
-import pandas as pd
-# ... (any other imports)
 
-# The Bulletproof Import Section
+# The connection logic starts here
 try:
     from st_gsheets_connection import GSheetsConnection
 except ImportError:
     from streamlit_gsheets_connection import GSheetsConnection
 
-# Create the connection object (this usually comes after imports)
-conn = st.connection("gsheets", type=GSheetsConnection)# ... other imports ...
-
-try:
-    from st_gsheets_connection import GSheetsConnection
-except ImportError:
-    # --- Replacement for Line 13 ---
-try:
-    from st_gsheets_connection import GSheetsConnection
-except ImportError:
-    from streamlit_gsheets_connection import GSheetsConnection
-
-# --- 1. PAGE CONFIG & STYLING ---
+# Create the connection object
+conn = st.connection("gsheets", type=GSheetsConnection)
 st.set_page_config(page_title="EyeScan AI", page_icon="👁️", layout="wide")
 
 st.markdown("""
@@ -146,6 +127,7 @@ if is_admin:
 # --- 7. DOWNLOAD REPORT ---
     report = f"EyeScan AI Report\nScore: {prediction:.1f}\nPercentile: {100-percentile:.1f}%"
     st.download_button("📥 Download Report", report, file_name="EyeReport.txt")
+
 
 
 
