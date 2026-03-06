@@ -1,17 +1,16 @@
 import streamlit as st
-from st_gsheets_connection import GSheetsConnection
+from streamlit_gsheets import GSheetsConnection
 
-st.set_page_config(page_title="Eye Consultant Test")
+st.set_page_config(page_title="Eye Consultant", page_icon="👁️")
 
-st.title("👁️ Eye Consultant Connection Test")
+st.title("👁️ Personal Eye Consultant")
 
-# Attempt to connect
+# Connection Logic
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df = conn.read()
-    st.success("✅ Connection Successful!")
-    st.write("Here is the data from your sheet:")
+    st.success("✅ Database Connected!")
     st.dataframe(df.head())
 except Exception as e:
-    st.error("❌ Connection failed.")
-    st.exception(e)
+    st.error("❌ Connection failed. Check your Secrets and Sheet sharing.")
+    st.info(f"Technical error: {e}")
