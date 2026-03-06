@@ -5,7 +5,18 @@ import plotly.express as px
 import plotly.graph_objects as go
 import joblib
 import streamlit as st
-# ... other imports ...
+import streamlit as st
+import pandas as pd
+# ... (any other imports)
+
+# The Bulletproof Import Section
+try:
+    from st_gsheets_connection import GSheetsConnection
+except ImportError:
+    from streamlit_gsheets_connection import GSheetsConnection
+
+# Create the connection object (this usually comes after imports)
+conn = st.connection("gsheets", type=GSheetsConnection)# ... other imports ...
 
 try:
     from st_gsheets_connection import GSheetsConnection
@@ -135,6 +146,7 @@ if is_admin:
 # --- 7. DOWNLOAD REPORT ---
     report = f"EyeScan AI Report\nScore: {prediction:.1f}\nPercentile: {100-percentile:.1f}%"
     st.download_button("📥 Download Report", report, file_name="EyeReport.txt")
+
 
 
 
