@@ -1,33 +1,17 @@
 import streamlit as st
-import pandas as pd
+from st_gsheets_connection import GSheetsConnection
 
-# 1. Secure Import for Google Sheets Connection
-try:
-    from st_gsheets_connection import GSheetsConnection
-except ImportError:
-    from streamlit_gsheets_connection import GSheetsConnection
+st.set_page_config(page_title="Eye Consultant Test")
 
-# 2. Page Configuration
-st.set_page_config(page_title="Eye Consultant AI", page_icon="👁️")
+st.title("👁️ Eye Consultant Connection Test")
 
-st.title("👁️ Personal Eye Consultant")
-
-# 3. Establish Connection
+# Attempt to connect
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
-    
-    # Test read: change 'Sheet1' to your actual sheet name if different
     df = conn.read()
-    
-    st.success("Successfully connected to Google Sheets!")
-    
-    # Show a preview of the data
-    if st.checkbox("Show Data Preview"):
-        st.write(df.head())
-
+    st.success("✅ Connection Successful!")
+    st.write("Here is the data from your sheet:")
+    st.dataframe(df.head())
 except Exception as e:
-    st.error("Connection failed. Please check your Secrets and Google Sheet sharing settings.")
-    st.info(f"Error Details: {e}")
-
-# --- YOUR APP LOGIC BELOW ---
-st.write("Welcome to your AI consultant. Use the sidebar to navigate.")
+    st.error("❌ Connection failed.")
+    st.exception(e)
