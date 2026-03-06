@@ -117,17 +117,30 @@ if check_password():
 
             if submit:
                 if model_ready:
-                    # Prepare input for the AI (matching the model's training features)
-                    # Note: You may need to encode 'symptom' if your model uses numbers
-                    input_data = pd.DataFrame([[age, duration]], columns=['Age', 'Duration'])
+                    # 1. Convert text to numbers (Encoding)
+                    # This maps your symptoms to the numbers the model likely expects
+                    symptom_map = {"Blurry Vision": 0, "Dryness": 1, "Itching": 2, "Pain": 3, "Redness": 4}
+                    gender_map = {"Male": 0, "Female": 1}
                     
-                    prediction = model.predict(input_data)
-                    result = prediction[0]
+                    s_val = symptom_map.get(symptom, 0)
+                    g_val = gender_map.get(gender, 0)
 
-                    st.markdown("---")
-                    st.subheader("AI Recommendation")
-                    st.success(f"Assessment: **{result}**")
-                    st.warning("⚠️ Disclaimer: This is not a substitute for professional medical advice.")
+                    # 2. Create the EXACT dataframe the model expects
+                    # The order must be exactly how you trained the model
+                    # For example: [Age, Gender, Symptom, Duration]
+                    try:
+                        input_data = pd.DataFrame([[age, g_val, s_val, duration]], 
+                                                 columns=['Age', 'Gender', 'Symptom', 'Duration'])
+                        
+                        prediction = model.predict(input_data)
+                        result = prediction[0]
+
+                        st.markdown("---")
+                        st.subheader("AI Recommendation")
+                        st.success(f"Assessment: **{result}**")
+                    except Exception as e:
+                        st.error(f"Feature Mismatch: {e}")
+                        st.info("Check the logs to see the exact column names the model is looking for.")
 
                     # SAVE TO GOOGLE SHEETS
                     if db_connected:
@@ -161,5 +174,6 @@ if check_password():
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No records found in the database.")
+
 
 
