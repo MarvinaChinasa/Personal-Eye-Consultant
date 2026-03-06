@@ -5,18 +5,21 @@ import joblib
 import os
 from streamlit_gsheets import GSheetsConnection
 
-# --- 1. PAGE CONFIG & STYLING ---
+# --- 1. PAGE CONFIG & SOPHISTICATED STYLING ---
 st.set_page_config(page_title="Eye AI Consultant", page_icon="👁️", layout="wide")
 
 st.markdown("""
     <style>
     .stApp { background-color: #f0f4f8; }
+    
+    /* SIDEBAR - DIM WHITE TEXT FOR BETTER AESTHETICS */
     section[data-testid="stSidebar"] { background-color: #1e3a8a !important; }
     section[data-testid="stSidebar"] * {
-        color: #fbbf24 !important;
-        font-size: 18px !important;
-        font-weight: 800 !important;
+        color: #d1d5db !important; /* Dimmed light grey/white */
+        font-size: 16px !important;
+        font-weight: 500 !important;
     }
+    
     .stButton>button {
         width: 100%;
         border-radius: 20px;
@@ -24,14 +27,23 @@ st.markdown("""
         color: white;
         font-weight: bold;
         height: 3.5em;
+        border: none;
     }
+    
     .result-box {
         padding: 20px;
         border-radius: 15px;
-        background-color: #ecfdf5;
-        border: 2px solid #10b981;
-        text-align: center;
-        color: #065f46;
+        background-color: #ffffff;
+        border-left: 10px solid #3b82f6;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        margin-bottom: 20px;
+    }
+    
+    .recommendation-card {
+        background-color: #f9fafb;
+        padding: 15px;
+        border-radius: 10px;
+        border: 1px solid #e5e7eb;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -47,45 +59,50 @@ except:
 
 # --- 3. SIDEBAR NAVIGATION ---
 with st.sidebar:
-    st.markdown("### VISION MENU")
-    page = st.radio("", ["🏠 Welcome", "🩺 AI Consultation", "🔒 Admin Records"])
+    st.markdown("### NAVIGATION")
+    page = st.radio("", ["🏠 Home", "🩺 Consultation", "🔒 Admin"])
 
-# --- PAGE 1: WELCOME ---
-if page == "🏠 Welcome":
+# --- PAGE 1: HOME ---
+if page == "🏠 Home":
     st.title("👁️ Personal Eye Consultant AI")
-    st.write("Understand your eye health through the lens of Artificial Intelligence.")
-    st.info("Our model evaluates 10 different physical and digital lifestyle factors to estimate eye strain risks.")
+    st.write("Professional vision habit analysis powered by Machine Learning.")
+    
+    
+
+[Image of the anatomy of the human eye showing retina, lens and cornea]
+
+    
     st.markdown("""
-    ### How it Works
-    - **Digital Hygiene:** Tracks screen time and brightness.
-    - **Environment:** Analyzes outdoor light and exercise.
-    - **Physical Baseline:** Accounts for age and current prescription.
+    ### System Capabilities
+    - **Risk Mapping:** Analyzes 10 environmental and physical variables.
+    - **Habit Analysis:** Evaluates digital vs. natural light exposure.
+    - **Personalized Feedback:** Get tailored advice based on your specific AI result.
     """)
 
-# --- PAGE 2: AI CONSULTATION ---
-elif page == "🩺 AI Consultation":
-    st.title("🩺 AI Assessment")
+# --- PAGE 2: CONSULTATION ---
+elif page == "🩺 Consultation":
+    st.title("🩺 Vision Assessment")
     model_path = 'eye_health_model.pkl'
     
     if os.path.exists(model_path):
         model = joblib.load(model_path)
         
         with st.form(key="eye_form"):
-            col1, col2 = st.columns(2)
-            with col1:
+            c1, c2 = st.columns(2)
+            with c1:
                 age = st.number_input("Age", 0, 110, 25)
                 height = st.number_input("Height (cm)", 100, 220, 170)
                 glasses = st.number_input("Glasses Power", -20.0, 20.0, 0.0)
-                exercise = st.number_input("Exercise (Hrs/Week)", 0, 40, 5)
+                exercise = st.number_input("Weekly Exercise (Hrs)", 0, 40, 5)
                 mental = st.slider("Well-being (1-10)", 1, 10, 7)
-            with col2:
-                scr_time = st.number_input("Screen Time (Hrs/Day)", 0, 24, 8)
+            with c2:
+                scr_time = st.number_input("Daily Screen Time (Hrs)", 0, 24, 8)
                 scr_dist = st.number_input("Screen Distance (cm)", 10, 100, 50)
-                bright = st.slider("Brightness (%)", 0, 100, 70)
-                outdoor = st.number_input("Outdoor (Hrs/Day)", 0, 24, 2)
-                night = st.selectbox("Night Mode", ["Always", "Sometimes", "Never"])
+                bright = st.slider("Screen Brightness (%)", 0, 100, 70)
+                outdoor = st.number_input("Outdoor Exposure (Hrs)", 0, 24, 2)
+                night = st.selectbox("Night Mode Usage", ["Always", "Sometimes", "Never"])
             
-            submit = st.form_submit_button("🔍 ANALYZE")
+            submit = st.form_submit_button("🔍 RUN ANALYSIS")
 
         if submit:
             nm_map = {"Always": 2, "Sometimes": 1, "Never": 0}
@@ -101,34 +118,51 @@ elif page == "🩺 AI Consultation":
             if hasattr(model, "feature_names_in_"):
                 input_df = input_df[model.feature_names_in_]
             
-            result = model.predict(input_df)[0]
-            st.markdown(f'<div class="result-box"><h2>Result: {result}</h2></div>', unsafe_allow_html=True)
+            prediction = model.predict(input_df)[0]
             
-            # Save data to Google Sheets
+            # --- AI INTERPRETATION LOGIC ---
+            st.markdown(f'<div class="result-box"><h3>AI Result: {prediction}</h3></div>', unsafe_allow_html=True)
+            
+            st.subheader("📋 Interpretation & Recommendations")
+            
+            # Create a card for recommendations
+            with st.container():
+                if "Good" in str(prediction) or "Normal" in str(prediction):
+                    st.success("**What this means:** Your current lifestyle and physical metrics suggest a balanced eye environment.")
+                    st.markdown("""
+                    - **Recommendation 1:** Maintain the 20-20-20 rule during long screen sessions.
+                    - **Recommendation 2:** Continue getting at least 2 hours of natural light daily.
+                    """)
+                elif "Strain" in str(prediction) or "Risk" in str(prediction):
+                    st.warning("**What this means:** The AI has detected patterns commonly associated with digital eye fatigue or vision strain.")
+                    st.markdown("""
+                    - **Recommendation 1:** Increase your screen distance to at least 50cm.
+                    - **Recommendation 2:** Use 'Night Mode' consistently after sunset to reduce blue light.
+                    - **Recommendation 3:** **Schedule a professional eye exam** to verify these findings.
+                    """)
+                else:
+                    st.info("**What this means:** Based on your inputs, your profile shows unique characteristics.")
+                    st.markdown("- **Recommendation:** Monitor for any signs of blurred vision or headaches and consult an optometrist.")
+
             if db_connected:
-                new_row = pd.DataFrame([{"Timestamp": pd.Timestamp.now(), "Age": age, "Result": result}])
-                updated_history = pd.concat([df_history, new_row], ignore_index=True)
-                conn.update(data=updated_history)
+                new_row = pd.DataFrame([{"Timestamp": pd.Timestamp.now(), "Age": age, "Result": prediction}])
+                conn.update(data=pd.concat([df_history, new_row], ignore_index=True))
     else:
-        st.error("Model file 'eye_health_model.pkl' not found in your GitHub repository.")
+        st.error("Model 'eye_health_model.pkl' not found.")
 
 # --- PAGE 3: ADMIN ---
-elif page == "🔒 Admin Records":
-    if "logged_in" not in st.session_state:
-        st.session_state.logged_in = False
+elif page == "🔒 Admin":
+    if "logged_in" not in st.session_state: st.session_state.logged_in = False
     
     if not st.session_state.logged_in:
         pwd = st.text_input("Admin Password", type="password")
-        if st.button("Login"):
+        if st.button("Access Logs"):
             if pwd == st.secrets["ADMIN_PASSWORD"]:
                 st.session_state.logged_in = True
                 st.rerun()
-            else:
-                st.error("Access Denied.")
     else:
         st.button("Logout", on_click=lambda: st.session_state.update({"logged_in": False}))
-        st.write("### Consultation History")
         st.dataframe(df_history, use_container_width=True)
         if not df_history.empty:
-            fig = px.pie(df_history, names="Result", hole=0.4, title="Distribution of Diagnoses")
+            fig = px.pie(df_history, names="Result", hole=0.4, title="Global Assessment Distribution")
             st.plotly_chart(fig)
