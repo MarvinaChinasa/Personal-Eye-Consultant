@@ -64,19 +64,18 @@ with st.sidebar:
     page = st.radio("", ["🏠 Home", "🩺 Consultation", "🔒 Admin"])
     st.write("") 
     st.divider()
-    st.markdown("⚠️ **Disclaimer:** This AI is a decision-support tool for educational purposes only. It is not a clinical diagnosis. Always consult a qualified optometrist.")
+    st.markdown("⚠️ **Disclaimer:** This AI is a decision-support tool. It is not a clinical diagnosis. Always consult a qualified optometrist.")
 
 # --- PAGE 1: HOME ---
 if page == "🏠 Home":
     st.title("👁️ Personal Eye Consultant AI")
     st.write("Professional vision habit analysis powered by Machine Learning.")
-    
     st.markdown("""
     ### How our AI evaluates your vision:
     The model identifies correlations between your physical baseline and digital environment.
-    - **Accommodation Stress:** How hard your lenses work based on screen distance.
-    - **Circadian Impact:** How night-mode and brightness affect eye fatigue.
-    - **Developmental Factors:** The role of outdoor light in maintaining healthy eye regulation.
+    - **Refractive Mapping:** Translates complex data into clear vision categories.
+    - **Habit Analysis:** Evaluates the impact of screen distance and brightness.
+    - **Personalized Feedback:** Tailored advice based on clinical patterns.
     """)
     st.info("Navigate to **Consultation** to begin.")
 
@@ -120,68 +119,54 @@ elif page == "🩺 Consultation":
             
             prediction = model.predict(input_df)[0]
             
-            # --- RESULTS SECTION ---
-            st.markdown(f'<div class="result-box"><h2>AI Diagnosis: {prediction}</h2></div>', unsafe_allow_html=True)
+            # --- TRANSLATION MAP ---
+            # Mapping numbers to human-readable clinical groups
+            result_map = {
+                107: "Hyperopic Patterns (Far-Sightedness)",
+                65: "Myopic Patterns (Near-Sightedness)",
+                0: "Healthy / Normal Vision",
+                1: "Mild Digital Eye Strain"
+            }
             
-            # THE DOWNLOAD BUTTON (RE-ADDED)
-            report_text = (
-                f"EYE CONSULTANT AI REPORT\n"
-                f"--------------------------\n"
-                f"Date: {pd.Timestamp.now().strftime('%Y-%m-%d %H:%M')}\n"
-                f"Age: {age}\n"
-                f"AI Result: {prediction}\n\n"
-                f"Note: This is an AI-generated suggestion based on habit patterns. "
-                f"It is not a clinical diagnosis."
-            )
-            st.download_button(
-                label="📥 Download My Results",
-                data=report_text,
-                file_name=f"Vision_Report_{pd.Timestamp.now().strftime('%Y%m%d')}.txt",
-                mime="text/plain"
-            )
+            # Use the map, default to "Group X" if number isn't listed
+            friendly_result = result_map.get(prediction, f"Refractive Group {prediction}")
+
+            # --- RESULTS SECTION ---
+            st.markdown(f'<div class="result-box"><h2>AI Diagnosis: {friendly_result}</h2></div>', unsafe_allow_html=True)
+            
+            # DOWNLOAD BUTTON
+            report_text = f"EYE AI REPORT\nDate: {pd.Timestamp.now()}\nDiagnosis: {friendly_result}\nAge: {age}"
+            st.download_button("📥 Download Report", report_text, file_name="Eye_Report.txt")
 
             st.subheader("📋 Comprehensive Report")
-            res_val = str(prediction).lower()
+            res_val = friendly_result.lower()
             
             with st.container():
                 st.markdown('<div class="recommendation-section">', unsafe_allow_html=True)
                 
-                if any(x in res_val for x in ["good", "normal", "healthy"]):
-                    st.success("### ✅ Optimal Vision Balance")
-                    st.write("Your metrics indicate that your lifestyle habits effectively compensate for digital strain.")
+                if "myopic" in res_val or "65" in str(prediction):
+                    st.error("### 👓 Focus: Myopic Pattern (Near-Sightedness)")
+                    st.write("Your profile matches patterns where distant vision is compromised by eye elongation.")
                     st.markdown("""
-                    **Detailed Recommendations:**
-                    - **Maintain Ergonomics:** Continue keeping screens at least 50cm away.
-                    - **Sunlight Intake:** Your outdoor light exposure helps regulate eye development.
-                    - **Preventative Care:** Follow the **20-20-20 rule** to maintain ciliary muscle flexibility.
+                    - **Recommendation:** Increase outdoor daylight to 2 hours daily to regulate eye growth.
+                    - **Habit:** Reduce continuous near-work; blink consciously to refresh the tear film.
                     """)
-                elif any(x in res_val for x in ["strain", "fatigue", "des"]):
-                    st.warning("### ⚠️ Digital Eye Strain (DES) Detected")
-                    st.write("The AI has flagged a high correlation between screen intensity and insufficient recovery time.")
+                elif "hyperopic" in res_val or "107" in str(prediction):
+                    st.warning("### 🔍 Focus: Hyperopic Pattern (Far-Sightedness)")
+                    st.write("Your profile suggests your eyes work harder to focus on close objects.")
                     st.markdown("""
-                    **Detailed Recommendations:**
-                    - **Brightness Check:** Match screen brightness to ambient light to reduce pupillary stress.
-                    - **Blue Light:** Increase Night Mode usage to reduce HEV light impact.
-                    - **Blink Often:** Consciously blink to keep the tear film stable during screen use.
-                    """)
-                elif "myopia" in res_val:
-                    st.error("### 👓 Potential Myopic Progression")
-                    st.write("The model suggests patterns associated with nearsightedness development.")
-                    st.markdown("""
-                    **Detailed Recommendations:**
-                    - **Outdoor Time:** Aim for 2 hours of daylight exposure to stimulate retinal dopamine.
-                    - **Distance Work:** Take frequent breaks from "near-work" (reading/phones).
-                    - **Clinical Check:** A professional refraction test is highly recommended.
+                    - **Recommendation:** Increase font sizes on digital devices.
+                    - **Habit:** Ensure your workspace has bright, even ambient lighting to reduce strain.
                     """)
                 else:
-                    st.info("### ℹ️ Diverse Habit Profile")
-                    st.write("Your inputs show a unique combination of factors.")
-                    st.markdown("- **Recommendation:** Keep a log of any visual discomfort and share it with a specialist.")
+                    st.success("### ✅ Focus: Balanced Vision")
+                    st.write("Your habits are currently supporting healthy ocular recovery.")
+                    st.markdown("- **Recommendation:** Follow the 20-20-20 rule to prevent future strain.")
                 
                 st.markdown('</div>', unsafe_allow_html=True)
 
             if db_connected:
-                new_row = pd.DataFrame([{"Timestamp": pd.Timestamp.now(), "Age": age, "Result": prediction}])
+                new_row = pd.DataFrame([{"Timestamp": pd.Timestamp.now(), "Age": age, "Result": friendly_result}])
                 conn.update(data=pd.concat([df_history, new_row], ignore_index=True))
     else:
         st.error("Model 'eye_health_model.pkl' not found.")
@@ -199,7 +184,6 @@ elif page == "🔒 Admin":
             else: st.error("Access Denied.")
     else:
         st.button("Logout", on_click=lambda: st.session_state.update({"logged_in": False}))
-        st.write("### Consultation History")
         st.dataframe(df_history, use_container_width=True)
         if not df_history.empty:
             fig = px.pie(df_history, names="Result", hole=0.4, title="Global Data Overview")
