@@ -19,7 +19,7 @@ st.markdown("""
 # --- 2. SECURITY CHECK ---
 def check_password():
     if "ADMIN_PASSWORD" not in st.secrets:
-        st.error("Configuration Error: 'ADMIN_PASSWORD' not found in Streamlit Secrets.")
+        st.error("Configuration Error: 'ADMIN_PASSWORD' not found in Secrets.")
         return False
     if "password_correct" not in st.session_state:
         st.title("🔒 Eye Consultant Secure Portal")
@@ -59,7 +59,7 @@ if check_password():
         with col1: st.metric("System Status", "Online" if db_connected else "Offline")
         with col2: st.metric("Total Consultations", len(df_history) if db_connected else 0)
         with col3: st.metric("AI Model Status", "Ready")
-        st.info("Navigate to **AI Consultation** to begin.")
+        st.info("Navigate to **AI Consultation** to begin a patient assessment.")
 
     # PAGE 2: AI CONSULTATION
     elif page == "AI Consultation":
@@ -75,7 +75,7 @@ if check_password():
                 st.error(f"⚠️ Model Load Error: {e}")
         
         with st.form(key="final_eye_form"):
-            st.subheader("Patient Profile & Habits")
+            st.subheader("Patient Metrics & Habits")
             c1, c2 = st.columns(2)
             with c1:
                 age = st.number_input("Age", 0, 110, 25)
@@ -96,31 +96,26 @@ if check_password():
 
             if submit and model_ready:
                 try:
-                    # --- CRITICAL: THE EXACT ALPHABETICAL ORDER ---
-                    # age, exercise_hours, glasses_number, height_cm, mental_health_score, 
-                    # night_mode_usage, outdoor_light_exposure_hours, screen_brightness_avg, 
-                    # screen_distance_cm, screen_time_hours
+                    # THE ORDER OF FEATURES IS CRITICAL
+                    # We create a dictionary first to map the values to names
+                    features = {
+                        'age': age,
+                        'exercise_hours': exercise_hours,
+                        'glasses_number': glasses_number,
+                        'height_cm': height_cm,
+                        'mental_health_score': mental_health_score,
+                        'night_mode_usage': nm_val,
+                        'outdoor_light_exposure_hours': outdoor_light_exposure_hours,
+                        'screen_brightness_avg': screen_brightness_avg,
+                        'screen_distance_cm': screen_distance_cm,
+                        'screen_time_hours': screen_time_hours
+                    }
                     
-                    data_row = [
-                        age, 
-                        exercise_hours, 
-                        glasses_number, 
-                        height_cm, 
-                        mental_health_score, 
-                        nm_val, 
-                        outdoor_light_exposure_hours, 
-                        screen_brightness_avg, 
-                        screen_distance_cm, 
-                        screen_time_hours
-                    ]
+                    # Convert dictionary to DataFrame
+                    input_df = pd.DataFrame([features])
                     
-                    columns_order = [
-                        'age', 'exercise_hours', 'glasses_number', 'height_cm', 
-                        'mental_health_score', 'night_mode_usage', 'outdoor_light_exposure_hours', 
-                        'screen_brightness_avg', 'screen_distance_cm', 'screen_time_hours'
-                    ]
-                    
-                    input_df = pd.DataFrame([data_row], columns=columns_order)
+                    # FORCE ALPHABETICAL ORDER (Standard for many models unless specified otherwise)
+                    input_df = input_df.reindex(sorted(input_df.columns), axis=1)
                     
                     prediction = model.predict(input_df)
                     result = prediction[0]
@@ -136,6 +131,7 @@ if check_password():
                             
                 except Exception as e:
                     st.error(f"Prediction Error: {e}")
+                    st.info("If the order is still wrong, look for 'Expected: [list]' in the 'Manage App' logs.")
 
     # PAGE 3: HISTORY LOG
     elif page == "History Log":
