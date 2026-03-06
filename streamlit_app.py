@@ -31,11 +31,12 @@ st.markdown("""
         background-color: #ecfdf5;
         border: 2px solid #10b981;
         text-align: center;
+        color: #065f46;
     }
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. DATABASE ---
+# --- 2. DATABASE CONNECTION ---
 try:
     conn = st.connection("gsheets", type=GSheetsConnection)
     df_history = conn.read(ttl=0)
@@ -44,7 +45,7 @@ except:
     db_connected = False
     df_history = pd.DataFrame()
 
-# --- 3. SIDEBAR ---
+# --- 3. SIDEBAR NAVIGATION ---
 with st.sidebar:
     st.markdown("### VISION MENU")
     page = st.radio("", ["🏠 Welcome", "🩺 AI Consultation", "🔒 Admin Records"])
@@ -53,13 +54,13 @@ with st.sidebar:
 if page == "🏠 Welcome":
     st.title("👁️ Personal Eye Consultant AI")
     st.write("Understand your eye health through the lens of Artificial Intelligence.")
-    
-    
-
-[Image of the anatomy of the human eye showing retina, lens and cornea]
-
-    
     st.info("Our model evaluates 10 different physical and digital lifestyle factors to estimate eye strain risks.")
+    st.markdown("""
+    ### How it Works
+    - **Digital Hygiene:** Tracks screen time and brightness.
+    - **Environment:** Analyzes outdoor light and exercise.
+    - **Physical Baseline:** Accounts for age and current prescription.
+    """)
 
 # --- PAGE 2: AI CONSULTATION ---
 elif page == "🩺 AI Consultation":
@@ -97,23 +98,24 @@ elif page == "🩺 AI Consultation":
             }
             input_df = pd.DataFrame([features])
             
-            # Align columns if the model provides the list
             if hasattr(model, "feature_names_in_"):
                 input_df = input_df[model.feature_names_in_]
             
             result = model.predict(input_df)[0]
             st.markdown(f'<div class="result-box"><h2>Result: {result}</h2></div>', unsafe_allow_html=True)
             
-            # Save data
+            # Save data to Google Sheets
             if db_connected:
                 new_row = pd.DataFrame([{"Timestamp": pd.Timestamp.now(), "Age": age, "Result": result}])
-                conn.update(data=pd.concat([df_history, new_row], ignore_index=True))
+                updated_history = pd.concat([df_history, new_row], ignore_index=True)
+                conn.update(data=updated_history)
     else:
-        st.error("Model file not found in repository.")
+        st.error("Model file 'eye_health_model.pkl' not found in your GitHub repository.")
 
 # --- PAGE 3: ADMIN ---
 elif page == "🔒 Admin Records":
-    if "logged_in" not in st.session_state: st.session_state.logged_in = False
+    if "logged_in" not in st.session_state:
+        st.session_state.logged_in = False
     
     if not st.session_state.logged_in:
         pwd = st.text_input("Admin Password", type="password")
@@ -121,9 +123,12 @@ elif page == "🔒 Admin Records":
             if pwd == st.secrets["ADMIN_PASSWORD"]:
                 st.session_state.logged_in = True
                 st.rerun()
+            else:
+                st.error("Access Denied.")
     else:
         st.button("Logout", on_click=lambda: st.session_state.update({"logged_in": False}))
+        st.write("### Consultation History")
         st.dataframe(df_history, use_container_width=True)
         if not df_history.empty:
-            fig = px.pie(df_history, names="Result", hole=0.4)
+            fig = px.pie(df_history, names="Result", hole=0.4, title="Distribution of Diagnoses")
             st.plotly_chart(fig)
