@@ -88,22 +88,70 @@ if check_password():
     elif page == "AI Consultation":
         st.title("🩺 AI Symptom Assessment")
         
-        # Point to the NEW file name you uploaded
         model_path = 'eye_health_model.pkl'
         model_ready = False
 
         if os.path.exists(model_path):
             try:
-                # Load the binary brain
                 model = joblib.load(model_path)
                 model_ready = True
             except Exception as e:
                 st.error(f"⚠️ Model Load Error: {e}")
-                st.info("The file was found, but there's a version mismatch or corruption.")
-        else:
-            st.warning(f"File '{model_path}' not found on GitHub. Check the spelling!")
+        
+        with st.form("consult_form"):
+            st.subheader("Patient Metrics")
+            col1, col2 = st.columns(2)
+            with col1:
+                age = st.number_input("Age", 0, 100, 25)
+                height = st.number_input("Height (cm)", 100, 220, 170)
+                glasses = st.number_input("Glasses Number (Diopters)", -20.0, 20.0, 0.0)
+            with col2:
+                exercise = st.number_input("Weekly Exercise (Hours)", 0, 40, 5)
+                mental_health = st.slider("Mental Health Score (1-10)", 1, 10, 7)
+            
+            submit = st.form_submit_button("🚀 Run AI Diagnosis")
 
-        # ... (the rest of the form stays the same)
+            if submit:
+                if model_ready:
+                    try:
+                        # 1. Create Dataframe with EXACT names seen at fit time (lowercase)
+                        input_data = pd.DataFrame([[
+                            age, 
+                            exercise, 
+                            glasses, 
+                            height, 
+                            mental_health
+                        ]], columns=[
+                            'age', 
+                            'exercise_hours', 
+                            'glasses_number', 
+                            'height_cm', 
+                            'mental_health_score'
+                        ])
+                        
+                        # 2. Predict
+                        prediction = model.predict(input_data)
+                        result = prediction[0] # Now 'result' is defined!
+
+                        st.markdown("---")
+                        st.subheader("AI Recommendation")
+                        st.success(f"Assessment: **{result}**")
+
+                        # 3. SAVE TO GOOGLE SHEETS
+                        if db_connected:
+                            new_data = pd.DataFrame([{
+                                "Timestamp": pd.Timestamp.now().strftime("%Y-%m-%d %H:%M"),
+                                "Age": age,
+                                "Result": result
+                            }])
+                            updated_df = pd.concat([df_history, new_data], ignore_index=True)
+                            conn.update(data=updated_df)
+                            st.write("✅ Record synced to cloud.")
+                            
+                    except Exception as e:
+                        st.error(f"Prediction Error: {e}")
+                else:
+                    st.error("AI Model is not loaded correctly.")
         with st.form("consult_form"):
             c1, c2 = st.columns(2)
             with c1:
@@ -174,6 +222,7 @@ if check_password():
                 st.plotly_chart(fig, use_container_width=True)
         else:
             st.info("No records found in the database.")
+
 
 
 
